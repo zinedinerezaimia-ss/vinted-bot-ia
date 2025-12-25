@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VintedAI - Analyse Intelligente</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-card: #1a1a25;
+            --bg-card-hover: #22222f;
+            --accent-cyan: #00f5ff;
+            --accent-magenta: #ff00aa;
+            --accent-purple: #8b5cf6;
+            --accent-green: #00ff88;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0b0;
+            --text-muted: #6b6b7b;
+            --border-color: #2a2a3a;
+            --glow-cyan: 0 0 30px rgba(0, 245, 255, 0.3);
+            --glow-magenta: 0 0 30px rgba(255, 0, 170, 0.3);
+            --glow-purple: 0 0 30px rgba(139, 92, 246, 0.3);
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated Background */
+        .bg-grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                linear-gradient(rgba(0, 245, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 245, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .bg-glow {
+            position: fixed;
+            width: 600px;
+            height: 600px;
+            border-radius: 50%;
+            filter: blur(150px);
+            opacity: 0.15;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .bg-glow-1 {
+            top: -200px;
+            left: -200px;
+            background: var(--accent-cyan);
+            animation: float 15s ease-in-out infinite;
+        }
+
+        .bg-glow-2 {
+            bottom: -200px;
+            right: -200px;
+            background: var(--accent-magenta);
+            animation: float 18s ease-in-out infinite reverse;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(50px, 50px); }
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .logo-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-magenta));
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            box-shadow: var(--glow-cyan);
+            animation: pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: var(--glow-cyan); }
+            50% { box-shadow: var(--glow-magenta); }
+        }
+
+        .logo-text {
+            font-size: 42px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-magenta));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -1px;
+        }
+
+        .tagline {
+            font-size: 16px;
+            color: var(--text-secondary);
+            font-weight: 400;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        /* Upload Zone */
+        .upload-zone {
+            background: var(--bg-card);
+            border: 2px dashed var(--border-color);
+            border-radius: 24px;
+            padding: 50px 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+
+        .upload-zone::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(0, 245, 255, 0.05), rgba(255, 0, 170, 0.05));
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .upload-zone:hover {
+            border-color: var(--accent-cyan);
+            box-shadow: var(--glow-cyan);
+        }
+
+        .upload-zone:hover::before {
+            opacity: 1;
+        }
+
+        .upload-zone.dragover {
+            border-color: var(--accent-magenta);
+            box-shadow: var(--glow-magenta);
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 50px;
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        .upload-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .upload-subtitle {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        /* Preview Images */
+        .preview-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 25px;
+            justify-content: center;
+        }
+
+        .preview-item {
+            position: relative;
+            width: 110px;
+            height: 110px;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 2px solid var(--border-color);
+            animation: fadeIn 0.4s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .preview-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .preview-remove {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            width: 26px;
+            height: 26px;
+            background: rgba(255, 0, 100, 0.9);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s;
+        }
+
+        .preview-remove:hover {
+            transform: scale(1.15);
+        }
+
+        /* Analyze Button */
+        .analyze-btn {
+            width: 100%;
+            padding: 20px 40px;
+            font-size: 18px;
+            font-weight: 700;
+            font-family: 'Outfit', sans-serif;
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            color: var(--bg-primary);
+            transition: all 0.4s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .analyze-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .analyze-btn:hover::before {
+            left: 100%;
+        }
+
+        .analyze-btn:hover {
+            box-shadow: var(--glow-cyan);
+            transform: translateY(-2px);
+        }
+
+        .analyze-btn:disabled {
+            background: var(--border-color);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Loading */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 3px solid var(--border-color);
+            border-top-color: var(--accent-cyan);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 25px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 18px;
+            color: var(--text-secondary);
+        }
+
+        .loading-subtext {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-top: 10px;
+            font-family: 'Space Mono', monospace;
+        }
+
+        /* Results */
+        .results {
+            display: none;
+            margin-top: 40px;
+            animation: slideUp 0.6s ease;
+        }
+
+        .results.active {
+            display: block;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .results-title {
+            font-size: 28px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .confidence-badge {
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: 600;
+            font-family: 'Space Mono', monospace;
+        }
+
+        .confidence-high {
+            background: rgba(0, 255, 136, 0.15);
+            color: var(--accent-green);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+        }
+
+        .confidence-medium {
+            background: rgba(255, 200, 0, 0.15);
+            color: #ffc800;
+            border: 1px solid rgba(255, 200, 0, 0.3);
+        }
+
+        .confidence-low {
+            background: rgba(255, 100, 100, 0.15);
+            color: #ff6464;
+            border: 1px solid rgba(255, 100, 100, 0.3);
+        }
+
+        /* Product Card */
+        .product-card {
+            background: var(--bg-card);
+            border-radius: 24px;
+            padding: 30px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 25px;
+        }
+
+        .product-title {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: var(--accent-cyan);
+        }
+
+        .product-description {
+            font-size: 15px;
+            color: var(--text-secondary);
+            line-height: 1.7;
+            margin-bottom: 25px;
+            padding: 20px;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border-left: 3px solid var(--accent-magenta);
+        }
+
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+        }
+
+        .product-field {
+            background: var(--bg-secondary);
+            padding: 18px;
+            border-radius: 14px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .product-field:hover {
+            border-color: var(--accent-purple);
+            transform: translateY(-2px);
+        }
+
+        .field-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .field-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* Price Section */
+        .price-section {
+            background: linear-gradient(135deg, rgba(0, 245, 255, 0.1), rgba(139, 92, 246, 0.1));
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 25px;
+            border: 1px solid var(--accent-cyan);
+        }
+
+        .price-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .price-title {
+            font-size: 18px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .price-main {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .price-suggested {
+            font-size: 56px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-green));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1;
+        }
+
+        .price-label {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-top: 8px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .price-range {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+        }
+
+        .price-range-item {
+            text-align: center;
+        }
+
+        .price-range-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-secondary);
+        }
+
+        .price-range-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        /* Vinted Export */
+        .vinted-export {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid var(--border-color);
+        }
+
+        .export-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .export-title {
+            font-size: 18px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .copy-all-btn {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, var(--accent-magenta), var(--accent-purple));
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-weight: 600;
+            font-family: 'Outfit', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .copy-all-btn:hover {
+            box-shadow: var(--glow-magenta);
+            transform: translateY(-2px);
+        }
+
+        .export-fields {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .export-field {
+            background: var(--bg-secondary);
+            border-radius: 14px;
+            padding: 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 15px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .export-field:hover {
+            border-color: var(--accent-cyan);
+        }
+
+        .export-field-content {
+            flex: 1;
+        }
+
+        .export-field-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--accent-cyan);
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .export-field-value {
+            font-size: 15px;
+            color: var(--text-primary);
+            line-height: 1.5;
+        }
+
+        .copy-btn {
+            padding: 10px 18px;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Outfit', sans-serif;
+            white-space: nowrap;
+        }
+
+        .copy-btn:hover {
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+            background: rgba(0, 245, 255, 0.1);
+        }
+
+        .copy-btn.copied {
+            background: var(--accent-green);
+            border-color: var(--accent-green);
+            color: var(--bg-primary);
+        }
+
+        /* Keywords */
+        .keywords {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .keyword {
+            padding: 8px 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-family: 'Space Mono', monospace;
+        }
+
+        /* New Analysis Button */
+        .new-analysis-btn {
+            width: 100%;
+            padding: 18px;
+            margin-top: 30px;
+            background: transparent;
+            border: 2px solid var(--border-color);
+            border-radius: 14px;
+            color: var(--text-secondary);
+            font-size: 16px;
+            font-weight: 600;
+            font-family: 'Outfit', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .new-analysis-btn:hover {
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--accent-green);
+            color: var(--bg-primary);
+            padding: 16px 30px;
+            border-radius: 12px;
+            font-weight: 600;
+            opacity: 0;
+            transition: all 0.4s ease;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .container {
+                padding: 25px 15px;
+            }
+
+            .logo-text {
+                font-size: 32px;
+            }
+
+            .logo-icon {
+                width: 50px;
+                height: 50px;
+            }
+
+            .upload-zone {
+                padding: 40px 20px;
+            }
+
+            .preview-item {
+                width: 85px;
+                height: 85px;
+            }
+
+            .product-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .price-suggested {
+                font-size: 42px;
+            }
+
+            .price-range {
+                gap: 25px;
+            }
+
+            .results-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-grid"></div>
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
+
+    <div class="container">
+        <header class="header">
+            <div class="logo">
+                <div class="logo-icon">🔮</div>
+                <span class="logo-text">VintedAI</span>
+            </div>
+            <p class="tagline">Analyse intelligente • Prix optimisé • Vente rapide</p>
+        </header>
+
+        <div class="upload-zone" id="uploadZone">
+            <span class="upload-icon">📸</span>
+            <h3 class="upload-title">Dépose tes photos ici</h3>
+            <p class="upload-subtitle">Jusqu'à 5 images • JPG, PNG, WebP</p>
+            <div class="preview-container" id="previewContainer"></div>
+            <input type="file" id="fileInput" multiple accept="image/*" hidden>
+        </div>
+
+        <button class="analyze-btn" id="analyzeBtn" disabled>
+            ⚡ Analyser avec l'IA
+        </button>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p class="loading-text">Analyse en cours...</p>
+            <p class="loading-subtext" id="loadingText">Identification de la marque...</p>
+        </div>
+
+        <div class="results" id="results">
+            <div class="results-header">
+                <h2 class="results-title">
+                    <span>✨</span> Résultats
+                </h2>
+                <div class="confidence-badge" id="confidenceBadge">
+                    Confiance: ---%
+                </div>
+            </div>
+
+            <div class="product-card">
+                <h3 class="product-title" id="productTitle">-</h3>
+                <p class="product-description" id="productDescription">-</p>
+                
+                <div class="product-grid">
+                    <div class="product-field">
+                        <div class="field-label">Marque</div>
+                        <div class="field-value" id="fieldMarque">-</div>
+                    </div>
+                    <div class="product-field">
+                        <div class="field-label">Type</div>
+                        <div class="field-value" id="fieldType">-</div>
+                    </div>
+                    <div class="product-field">
+                        <div class="field-label">Couleur</div>
+                        <div class="field-value" id="fieldCouleur">-</div>
+                    </div>
+                    <div class="product-field">
+                        <div class="field-label">État</div>
+                        <div class="field-value" id="fieldEtat">-</div>
+                    </div>
+                    <div class="product-field">
+                        <div class="field-label">Taille</div>
+                        <div class="field-value" id="fieldTaille">-</div>
+                    </div>
+                    <div class="product-field">
+                        <div class="field-label">Catégorie</div>
+                        <div class="field-value" id="fieldCategorie">-</div>
+                    </div>
+                </div>
+
+                <div class="keywords" id="keywords"></div>
+            </div>
+
+            <div class="price-section">
+                <div class="price-header">
+                    <h3 class="price-title">
+                        <span>💰</span> Prix recommandé
+                    </h3>
+                </div>
+                <div class="price-main">
+                    <div class="price-suggested" id="priceSuggested">--€</div>
+                    <div class="price-label">Prix suggéré</div>
+                </div>
+                <div class="price-range">
+                    <div class="price-range-item">
+                        <div class="price-range-value" id="priceMin">--€</div>
+                        <div class="price-range-label">Minimum</div>
+                    </div>
+                    <div class="price-range-item">
+                        <div class="price-range-value" id="priceMax">--€</div>
+                        <div class="price-range-label">Maximum</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="vinted-export">
+                <div class="export-header">
+                    <h3 class="export-title">
+                        <span>📋</span> Copier pour Vinted
+                    </h3>
+                    <button class="copy-all-btn" id="copyAllBtn">
+                        Tout copier
+                    </button>
+                </div>
+                <div class="export-fields" id="exportFields"></div>
+            </div>
+
+            <button class="new-analysis-btn" id="newAnalysisBtn">
+                🔄 Nouvelle analyse
+            </button>
+        </div>
+    </div>
+
+    <div class="toast" id="toast">✓ Copié dans le presse-papier</div>
+
+    <script>
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+        const previewContainer = document.getElementById('previewContainer');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const loading = document.getElementById('loading');
+        const results = document.getElementById('results');
+        const toast = document.getElementById('toast');
+        const loadingText = document.getElementById('loadingText');
+
+        let selectedFiles = [];
+        let analysisResult = null;
+
+        const loadingMessages = [
+            "Identification de la marque...",
+            "Analyse des détails...",
+            "Estimation du prix...",
+            "Génération de la description...",
+            "Optimisation pour Vinted...",
+            "Finalisation..."
+        ];
+
+        // Upload zone events
+        uploadZone.addEventListener('click', (e) => {
+            if (e.target === uploadZone || e.target.classList.contains('upload-icon') || 
+                e.target.classList.contains('upload-title') || e.target.classList.contains('upload-subtitle')) {
+                fileInput.click();
+            }
+        });
+
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('dragover');
+        });
+
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('dragover');
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+
+        function handleFiles(files) {
+            const newFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+            
+            if (selectedFiles.length + newFiles.length > 5) {
+                showToast('Maximum 5 images !');
+                return;
+            }
+
+            selectedFiles = [...selectedFiles, ...newFiles].slice(0, 5);
+            renderPreviews();
+            analyzeBtn.disabled = selectedFiles.length === 0;
+        }
+
+        function renderPreviews() {
+            previewContainer.innerHTML = '';
+            
+            selectedFiles.forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const div = document.createElement('div');
+                    div.className = 'preview-item';
+                    div.innerHTML = `
+                        <img src="${e.target.result}" alt="Preview">
+                        <button class="preview-remove" data-index="${index}">×</button>
+                    `;
+                    previewContainer.appendChild(div);
+
+                    div.querySelector('.preview-remove').addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        removeFile(index);
+                    });
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function removeFile(index) {
+            selectedFiles.splice(index, 1);
+            renderPreviews();
+            analyzeBtn.disabled = selectedFiles.length === 0;
+        }
+
+        // Analyze
+        analyzeBtn.addEventListener('click', async () => {
+            if (selectedFiles.length === 0) return;
+
+            uploadZone.style.display = 'none';
+            analyzeBtn.style.display = 'none';
+            results.classList.remove('active');
+            loading.classList.add('active');
+
+            // Animate loading text
+            let msgIndex = 0;
+            const loadingInterval = setInterval(() => {
+                msgIndex = (msgIndex + 1) % loadingMessages.length;
+                loadingText.textContent = loadingMessages[msgIndex];
+            }, 2000);
+
+            try {
+                const images = await Promise.all(
+                    selectedFiles.map(file => {
+                        return new Promise((resolve) => {
+                            const reader = new FileReader();
+                            reader.onload = (e) => resolve(e.target.result);
+                            reader.readAsDataURL(file);
+                        });
+                    })
+                );
+
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ images })
+                });
+
+                const data = await response.json();
+                clearInterval(loadingInterval);
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                analysisResult = data;
+                displayResults(data);
+
+            } catch (error) {
+                clearInterval(loadingInterval);
+                showToast('Erreur: ' + error.message);
+                resetUI();
+            }
+        });
+
+        function displayResults(data) {
+            loading.classList.remove('active');
+            results.classList.add('active');
+
+            // Confidence
+            const confidence = data.confiance || 75;
+            const confidenceBadge = document.getElementById('confidenceBadge');
+            confidenceBadge.textContent = `Confiance: ${confidence}%`;
+            confidenceBadge.className = 'confidence-badge ' + 
+                (confidence >= 80 ? 'confidence-high' : confidence >= 60 ? 'confidence-medium' : 'confidence-low');
+
+            // Product info
+            document.getElementById('productTitle').textContent = data.titre || '-';
+            document.getElementById('productDescription').textContent = data.description || '-';
+            document.getElementById('fieldMarque').textContent = data.marque || '-';
+            document.getElementById('fieldType').textContent = data.type_produit || '-';
+            document.getElementById('fieldCouleur').textContent = Array.isArray(data.couleurs) ? data.couleurs.join(', ') : (data.couleurs || '-');
+            document.getElementById('fieldEtat').textContent = data.etat || '-';
+            document.getElementById('fieldTaille').textContent = data.taille || '-';
+            document.getElementById('fieldCategorie').textContent = data.categorie_vinted || '-';
+
+            // Keywords
+            const keywordsContainer = document.getElementById('keywords');
+            keywordsContainer.innerHTML = '';
+            if (data.mots_cles && data.mots_cles.length > 0) {
+                data.mots_cles.forEach(kw => {
+                    const span = document.createElement('span');
+                    span.className = 'keyword';
+                    span.textContent = '#' + kw;
+                    keywordsContainer.appendChild(span);
+                });
+            }
+
+            // Prices
+            document.getElementById('priceSuggested').textContent = (data.prix_suggere || '--') + '€';
+            document.getElementById('priceMin').textContent = (data.prix_min || '--') + '€';
+            document.getElementById('priceMax').textContent = (data.prix_max || '--') + '€';
+
+            // Export fields for Vinted
+            const exportFields = document.getElementById('exportFields');
+            exportFields.innerHTML = '';
+
+            const fields = [
+                { label: 'Titre', value: data.titre },
+                { label: 'Description', value: data.description },
+                { label: 'Marque', value: data.marque },
+                { label: 'Catégorie', value: data.categorie_vinted },
+                { label: 'Taille', value: data.taille },
+                { label: 'État', value: data.etat },
+                { label: 'Couleur', value: Array.isArray(data.couleurs) ? data.couleurs[0] : data.couleurs },
+                { label: 'Prix', value: data.prix_suggere + '€' }
+            ];
+
+            fields.forEach(field => {
+                if (field.value && field.value !== '-' && field.value !== 'Non visible' && field.value !== 'Non identifiée') {
+                    const div = document.createElement('div');
+                    div.className = 'export-field';
+                    div.innerHTML = `
+                        <div class="export-field-content">
+                            <div class="export-field-label">${field.label}</div>
+                            <div class="export-field-value">${field.value}</div>
+                        </div>
+                        <button class="copy-btn" data-value="${field.value}">Copier</button>
+                    `;
+                    exportFields.appendChild(div);
+
+                    div.querySelector('.copy-btn').addEventListener('click', function() {
+                        copyToClipboard(this.dataset.value, this);
+                    });
+                }
+            });
+        }
+
+        function copyToClipboard(text, btn) {
+            navigator.clipboard.writeText(text).then(() => {
+                btn.textContent = 'Copié !';
+                btn.classList.add('copied');
+                showToast('Copié !');
+                
+                setTimeout(() => {
+                    btn.textContent = 'Copier';
+                    btn.classList.remove('copied');
+                }, 2000);
+            });
+        }
+
+        // Copy all
+        document.getElementById('copyAllBtn').addEventListener('click', () => {
+            if (!analysisResult) return;
+
+            const text = `${analysisResult.titre || ''}
+
+${analysisResult.description || ''}
+
+Marque: ${analysisResult.marque || '-'}
+État: ${analysisResult.etat || '-'}
+Taille: ${analysisResult.taille || '-'}
+Couleur: ${Array.isArray(analysisResult.couleurs) ? analysisResult.couleurs.join(', ') : (analysisResult.couleurs || '-')}
+Prix: ${analysisResult.prix_suggere || '-'}€`;
+
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('Toutes les infos copiées !');
+            });
+        });
+
+        // New analysis
+        document.getElementById('newAnalysisBtn').addEventListener('click', resetUI);
+
+        function resetUI() {
+            selectedFiles = [];
+            analysisResult = null;
+            previewContainer.innerHTML = '';
+            fileInput.value = '';
+            analyzeBtn.disabled = true;
+            
+            loading.classList.remove('active');
+            results.classList.remove('active');
+            uploadZone.style.display = 'block';
+            analyzeBtn.style.display = 'block';
+        }
+
+        function showToast(message) {
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+    </script>
+</body>
+</html>
