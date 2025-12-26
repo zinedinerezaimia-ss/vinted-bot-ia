@@ -16,11 +16,19 @@ GEMINI_API_KEYS = [
     'AIzaSyAbCxhcS4WRkR3hPjh52rsLpFDk83Ow_M0'
 ]
 
+GEMINI_MODELS = [
+    'gemini-1.5-flash-latest',
+    'gemini-1.5-flash',
+    'gemini-pro-vision'
+]
+
 def get_random_api_key():
     return random.choice(GEMINI_API_KEYS)
 
-def analyze_images_with_gemini(images_base64, retry_count=0):
-    if retry_count >= len(GEMINI_API_KEYS):
+def analyze_images_with_gemini(images_base64, key_index=0, model_index=0):
+    if key_index >= len(GEMINI_API_KEYS):
+        if model_index < len(GEMINI_MODELS) - 1:
+            return analyze_images_with_gemini(images_base64, 0, model_index + 1)
         return {"error": "Toutes les cles API sont saturees. Reessaye dans quelques minutes."}
     
     headers = {
@@ -35,7 +43,7 @@ ANALYSE CES IMAGES AVEC UNE EXTREME PRECISION.
 
 IDENTIFICATION OBLIGATOIRE :
 1. MARQUE : Identifie la marque EXACTE (logos, etiquettes, motifs signatures)
-   - Pour les maillots de foot : identifie le CLUB et l'EQUIPEMENTIER
+   - Pour les maillots de foot : identifie le CLUB et EQUIPEMENTIER
    
 2. TYPE DE PRODUIT : Sois PRECIS (Maillot de football, Jean slim, Sneakers, etc.)
    - Pour les maillots : precise domicile/exterieur/third, la saison si visible
@@ -94,22 +102,23 @@ REPONDS UNIQUEMENT EN JSON VALIDE :
         }
     }
     
-    api_key = GEMINI_API_KEYS[retry_count] if retry_count > 0 else get_random_api_key()
+    api_key = GEMINI_API_KEYS[key_index]
+    model = GEMINI_MODELS[model_index]
     
     try:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}"
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
         response = requests.post(url, headers=headers, json=payload, timeout=60)
         
-        if response.status_code == 429:
-            return analyze_images_with_gemini(images_base64, retry_count + 1)
+        if response.status_code == 429 or response.status_code == 403:
+            return analyze_images_with_gemini(images_base64, key_index + 1, model_index)
         
         if response.status_code != 200:
-            return {"error": f"Erreur API Gemini: {response.status_code}"}
+            return analyze_images_with_gemini(images_base64, key_index + 1, model_index)
         
         result = response.json()
         
         if 'candidates' not in result or len(result['candidates']) == 0:
-            return {"error": "Pas de reponse de Gemini"}
+            return analyze_images_with_gemini(images_base64, key_index + 1, model_index)
         
         content_text = result['candidates'][0]['content']['parts'][0]['text']
         content_text = content_text.strip()
@@ -128,8 +137,8 @@ REPONDS UNIQUEMENT EN JSON VALIDE :
             return {"error": "Impossible de parser la reponse"}
             
     except Exception as e:
-        if retry_count < len(GEMINI_API_KEYS) - 1:
-            return analyze_images_with_gemini(images_base64, retry_count + 1)
+        if key_index < len(GEMINI_API_KEYS) - 1:
+            return analyze_images_with_gemini(images_base64, key_index + 1, model_index)
         return {"error": f"Erreur: {str(e)}"}
 
 
