@@ -1,1 +1,648 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VintedAI - Analyse Intelligente</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-card: #1a1a25;
+            --bg-input: #12121a;
+            --accent-cyan: #00f5ff;
+            --accent-magenta: #ff00aa;
+            --accent-purple: #8b5cf6;
+            --accent-green: #00ff88;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0b0;
+            --text-muted: #6b6b7b;
+            --border-color: #2a2a3a;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        .bg-glow {
+            position: fixed;
+            width: 600px;
+            height: 600px;
+            border-radius: 50%;
+            filter: blur(150px);
+            opacity: 0.12;
+            pointer-events: none;
+        }
+        .bg-glow-1 { top: -200px; left: -200px; background: var(--accent-cyan); }
+        .bg-glow-2 { bottom: -200px; right: -200px; background: var(--accent-magenta); }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header { text-align: center; margin-bottom: 50px; }
+
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .logo-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-magenta));
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+        }
+
+        .logo-text {
+            font-size: 42px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-magenta));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .tagline {
+            font-size: 16px;
+            color: var(--text-secondary);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .upload-zone {
+            background: var(--bg-card);
+            border: 2px dashed var(--border-color);
+            border-radius: 24px;
+            padding: 50px 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 30px;
+        }
+
+        .upload-zone:hover { border-color: var(--accent-cyan); }
+
+        .upload-icon { font-size: 50px; margin-bottom: 20px; }
+        .upload-title { font-size: 20px; font-weight: 600; margin-bottom: 10px; }
+        .upload-subtitle { font-size: 14px; color: var(--text-muted); }
+
+        .preview-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 25px;
+            justify-content: center;
+        }
+
+        .preview-item {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 2px solid var(--border-color);
+        }
+
+        .preview-item img { width: 100%; height: 100%; object-fit: cover; }
+
+        .preview-remove {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 24px;
+            height: 24px;
+            background: var(--accent-magenta);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .analyze-btn {
+            width: 100%;
+            padding: 20px;
+            font-size: 18px;
+            font-weight: 700;
+            font-family: 'Outfit', sans-serif;
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            color: var(--bg-primary);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: transform 0.2s;
+        }
+
+        .analyze-btn:hover { transform: translateY(-2px); }
+        .analyze-btn:disabled { background: var(--border-color); cursor: not-allowed; transform: none; }
+
+        .loading { display: none; text-align: center; padding: 60px 20px; }
+        .loading.active { display: block; }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid var(--border-color);
+            border-top-color: var(--accent-cyan);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .results { display: none; margin-top: 40px; }
+        .results.active { display: block; }
+
+        .section-title {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .confidence-badge {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-left: auto;
+        }
+
+        .confidence-high { background: rgba(0,255,136,0.15); color: var(--accent-green); }
+        .confidence-medium { background: rgba(255,200,0,0.15); color: #ffc800; }
+        .confidence-low { background: rgba(255,100,100,0.15); color: #ff6464; }
+
+        .edit-card {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 1px solid var(--border-color);
+        }
+
+        .edit-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .edit-field { margin-bottom: 5px; }
+
+        .edit-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--accent-cyan);
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .edit-input {
+            width: 100%;
+            padding: 14px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 15px;
+            font-family: 'Outfit', sans-serif;
+            transition: border-color 0.2s;
+        }
+
+        .edit-input:focus {
+            outline: none;
+            border-color: var(--accent-cyan);
+        }
+
+        .edit-textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .edit-field-full { grid-column: 1 / -1; }
+
+        .price-section {
+            background: linear-gradient(135deg, rgba(0,245,255,0.08), rgba(139,92,246,0.08));
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 25px;
+            border: 1px solid var(--accent-cyan);
+        }
+
+        .price-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            text-align: center;
+        }
+
+        .price-item label {
+            display: block;
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .price-input {
+            width: 100%;
+            padding: 15px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--accent-green);
+            font-size: 24px;
+            font-weight: 700;
+            text-align: center;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .price-input:focus {
+            outline: none;
+            border-color: var(--accent-green);
+        }
+
+        .copy-section {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 25px;
+            border: 1px solid var(--border-color);
+        }
+
+        .copy-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .copy-all-btn {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, var(--accent-magenta), var(--accent-purple));
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: 'Outfit', sans-serif;
+            transition: transform 0.2s;
+        }
+
+        .copy-all-btn:hover { transform: translateY(-2px); }
+
+        .copy-preview {
+            background: var(--bg-input);
+            border-radius: 12px;
+            padding: 20px;
+            font-size: 14px;
+            line-height: 1.8;
+            color: var(--text-secondary);
+            white-space: pre-wrap;
+            border: 1px solid var(--border-color);
+        }
+
+        .new-analysis-btn {
+            width: 100%;
+            padding: 18px;
+            margin-top: 25px;
+            background: transparent;
+            border: 2px solid var(--border-color);
+            border-radius: 14px;
+            color: var(--text-secondary);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .new-analysis-btn:hover { border-color: var(--accent-cyan); color: var(--accent-cyan); }
+
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--accent-green);
+            color: var(--bg-primary);
+            padding: 16px 30px;
+            border-radius: 12px;
+            font-weight: 600;
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+        .error-message {
+            background: rgba(255,100,100,0.1);
+            border: 1px solid rgba(255,100,100,0.3);
+            border-radius: 14px;
+            padding: 20px;
+            color: #ff6464;
+            text-align: center;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .error-message.active { display: block; }
+
+        @media (max-width: 600px) {
+            .logo-text { font-size: 32px; }
+            .edit-grid { grid-template-columns: 1fr 1fr; }
+            .price-grid { grid-template-columns: 1fr; gap: 15px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
+
+    <div class="container">
+        <header class="header">
+            <div class="logo">
+                <div class="logo-icon">🔮</div>
+                <span class="logo-text">VintedAI</span>
+            </div>
+            <p class="tagline">Analyse intelligente • Prix optimise • Vente rapide</p>
+        </header>
+
+        <div class="upload-zone" id="uploadZone">
+            <span class="upload-icon">📸</span>
+            <h3 class="upload-title">Depose tes photos ici</h3>
+            <p class="upload-subtitle">Jusqu'a 5 images • JPG, PNG, WebP</p>
+            <div class="preview-container" id="previewContainer"></div>
+            <input type="file" id="fileInput" multiple accept="image/*" hidden>
+        </div>
+
+        <button class="analyze-btn" id="analyzeBtn" disabled>⚡ Analyser avec l'IA</button>
+
+        <div class="error-message" id="errorMessage"></div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Analyse en cours...</p>
+        </div>
+
+        <div class="results" id="results">
+            <div class="section-title">
+                ✏️ Modifier les informations
+                <span class="confidence-badge" id="confidenceBadge">---%</span>
+            </div>
+
+            <div class="edit-card">
+                <div class="edit-grid">
+                    <div class="edit-field edit-field-full">
+                        <div class="edit-label">Titre</div>
+                        <input type="text" class="edit-input" id="editTitre" maxlength="80">
+                    </div>
+                    <div class="edit-field edit-field-full">
+                        <div class="edit-label">Description</div>
+                        <textarea class="edit-input edit-textarea" id="editDescription"></textarea>
+                    </div>
+                    <div class="edit-field">
+                        <div class="edit-label">Marque</div>
+                        <input type="text" class="edit-input" id="editMarque">
+                    </div>
+                    <div class="edit-field">
+                        <div class="edit-label">Type de produit</div>
+                        <input type="text" class="edit-input" id="editType">
+                    </div>
+                    <div class="edit-field">
+                        <div class="edit-label">Categorie Vinted</div>
+                        <input type="text" class="edit-input" id="editCategorie">
+                    </div>
+                    <div class="edit-field">
+                        <div class="edit-label">Etat</div>
+                        <select class="edit-input" id="editEtat">
+                            <option value="Neuf avec etiquette">Neuf avec etiquette</option>
+                            <option value="Neuf sans etiquette">Neuf sans etiquette</option>
+                            <option value="Tres bon etat">Tres bon etat</option>
+                            <option value="Bon etat" selected>Bon etat</option>
+                            <option value="Satisfaisant">Satisfaisant</option>
+                        </select>
+                    </div>
+                    <div class="edit-field">
+                        <div class="edit-label">Taille</div>
+                        <input type="text" class="edit-input" id="editTaille">
+                    </div>
+                    <div class="edit-field">
+                        <div class="edit-label">Couleur</div>
+                        <input type="text" class="edit-input" id="editCouleur">
+                    </div>
+                </div>
+            </div>
+
+            <div class="price-section">
+                <div class="section-title" style="margin-bottom: 25px;">💰 Prix</div>
+                <div class="price-grid">
+                    <div class="price-item">
+                        <label>Minimum</label>
+                        <input type="number" class="price-input" id="editPrixMin" min="1">
+                    </div>
+                    <div class="price-item">
+                        <label>Prix suggere</label>
+                        <input type="number" class="price-input" id="editPrixSuggere" min="1">
+                    </div>
+                    <div class="price-item">
+                        <label>Maximum</label>
+                        <input type="number" class="price-input" id="editPrixMax" min="1">
+                    </div>
+                </div>
+            </div>
+
+            <div class="copy-section">
+                <div class="copy-header">
+                    <div class="section-title" style="margin: 0;">📋 Copier pour Vinted</div>
+                    <button class="copy-all-btn" id="copyAllBtn">Tout copier</button>
+                </div>
+                <div class="copy-preview" id="copyPreview"></div>
+            </div>
+
+            <button class="new-analysis-btn" id="newAnalysisBtn">🔄 Nouvelle analyse</button>
+        </div>
+    </div>
+
+    <div class="toast" id="toast">Copie!</div>
+
+    <script>
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+        const previewContainer = document.getElementById('previewContainer');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const loading = document.getElementById('loading');
+        const results = document.getElementById('results');
+        const toast = document.getElementById('toast');
+        const errorMessage = document.getElementById('errorMessage');
+
+        let selectedFiles = [];
+
+        // Upload handlers
+        uploadZone.addEventListener('click', (e) => {
+            if (!e.target.classList.contains('preview-remove')) fileInput.click();
+        });
+        uploadZone.addEventListener('dragover', (e) => e.preventDefault());
+        uploadZone.addEventListener('drop', (e) => { e.preventDefault(); handleFiles(e.dataTransfer.files); });
+        fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+
+        function handleFiles(files) {
+            const newFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+            if (selectedFiles.length + newFiles.length > 5) { showToast('Max 5 images!'); return; }
+            selectedFiles = [...selectedFiles, ...newFiles].slice(0, 5);
+            renderPreviews();
+            analyzeBtn.disabled = selectedFiles.length === 0;
+        }
+
+        function renderPreviews() {
+            previewContainer.innerHTML = '';
+            selectedFiles.forEach((file, i) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const div = document.createElement('div');
+                    div.className = 'preview-item';
+                    div.innerHTML = `<img src="${e.target.result}"><button class="preview-remove" data-i="${i}">×</button>`;
+                    previewContainer.appendChild(div);
+                    div.querySelector('.preview-remove').addEventListener('click', (ev) => {
+                        ev.stopPropagation();
+                        selectedFiles.splice(i, 1);
+                        renderPreviews();
+                        analyzeBtn.disabled = selectedFiles.length === 0;
+                    });
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Analyze
+        analyzeBtn.addEventListener('click', async () => {
+            if (selectedFiles.length === 0) return;
+            uploadZone.style.display = 'none';
+            analyzeBtn.style.display = 'none';
+            results.classList.remove('active');
+            errorMessage.classList.remove('active');
+            loading.classList.add('active');
+
+            try {
+                const images = await Promise.all(selectedFiles.map(file => new Promise(resolve => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => resolve(e.target.result);
+                    reader.readAsDataURL(file);
+                })));
+
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ images })
+                });
+
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+                displayResults(data);
+            } catch (error) {
+                loading.classList.remove('active');
+                errorMessage.textContent = '❌ ' + error.message;
+                errorMessage.classList.add('active');
+                uploadZone.style.display = 'block';
+                analyzeBtn.style.display = 'block';
+            }
+        });
+
+        function displayResults(data) {
+            loading.classList.remove('active');
+            results.classList.add('active');
+
+            // Confidence badge
+            const conf = data.confiance || 70;
+            const badge = document.getElementById('confidenceBadge');
+            badge.textContent = conf + '%';
+            badge.className = 'confidence-badge ' + (conf >= 80 ? 'confidence-high' : conf >= 60 ? 'confidence-medium' : 'confidence-low');
+
+            // Fill editable fields
+            document.getElementById('editTitre').value = data.titre || '';
+            document.getElementById('editDescription').value = data.description || '';
+            document.getElementById('editMarque').value = data.marque || '';
+            document.getElementById('editType').value = data.type_produit || '';
+            document.getElementById('editCategorie').value = data.categorie_vinted || '';
+            document.getElementById('editEtat').value = data.etat || 'Bon etat';
+            document.getElementById('editTaille').value = data.taille || '';
+            document.getElementById('editCouleur').value = Array.isArray(data.couleurs) ? data.couleurs.join(', ') : (data.couleurs || '');
+            document.getElementById('editPrixMin').value = data.prix_min || 10;
+            document.getElementById('editPrixSuggere').value = data.prix_suggere || 20;
+            document.getElementById('editPrixMax').value = data.prix_max || 30;
+
+            updatePreview();
+        }
+
+        // Update preview when fields change
+        document.querySelectorAll('.edit-input, .price-input').forEach(el => {
+            el.addEventListener('input', updatePreview);
+        });
+
+        function updatePreview() {
+            const titre = document.getElementById('editTitre').value;
+            const desc = document.getElementById('editDescription').value;
+            const marque = document.getElementById('editMarque').value;
+            const etat = document.getElementById('editEtat').value;
+            const taille = document.getElementById('editTaille').value;
+            const couleur = document.getElementById('editCouleur').value;
+            const prix = document.getElementById('editPrixSuggere').value;
+
+            let preview = titre + '\n\n' + desc + '\n\n';
+            if (marque) preview += '• Marque: ' + marque + '\n';
+            if (etat) preview += '• Etat: ' + etat + '\n';
+            if (taille) preview += '• Taille: ' + taille + '\n';
+            if (couleur) preview += '• Couleur: ' + couleur + '\n';
+            preview += '\n💰 Prix: ' + prix + '€';
+
+            document.getElementById('copyPreview').textContent = preview;
+        }
+
+        // Copy all
+        document.getElementById('copyAllBtn').addEventListener('click', () => {
+            const text = document.getElementById('copyPreview').textContent;
+            navigator.clipboard.writeText(text);
+            showToast('Copie dans le presse-papier!');
+        });
+
+        // New analysis
+        document.getElementById('newAnalysisBtn').addEventListener('click', () => {
+            selectedFiles = [];
+            previewContainer.innerHTML = '';
+            fileInput.value = '';
+            analyzeBtn.disabled = true;
+            loading.classList.remove('active');
+            results.classList.remove('active');
+            errorMessage.classList.remove('active');
+            uploadZone.style.display = 'block';
+            analyzeBtn.style.display = 'block';
+        });
+
+        function showToast(msg) {
+            toast.textContent = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+    </script>
+</body>
+</html>
 
