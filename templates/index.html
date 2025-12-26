@@ -1,1 +1,557 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VintedAI - Analyse Intelligente</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --bg: #0a0a0f;
+            --card: #1a1a25;
+            --input: #12121a;
+            --cyan: #00f5ff;
+            --magenta: #ff00aa;
+            --purple: #8b5cf6;
+            --green: #00ff88;
+            --text: #ffffff;
+            --muted: #6b6b7b;
+            --border: #2a2a3a;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+
+        .header { text-align: center; margin-bottom: 40px; }
+
+        .logo {
+            font-size: 36px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--cyan), var(--magenta));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .tagline { font-size: 14px; color: var(--muted); letter-spacing: 2px; }
+
+        .upload-zone {
+            background: var(--card);
+            border: 2px dashed var(--border);
+            border-radius: 20px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+
+        .upload-zone:hover { border-color: var(--cyan); }
+
+        .upload-icon { font-size: 40px; margin-bottom: 15px; }
+        .upload-title { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+        .upload-sub { font-size: 13px; color: var(--muted); }
+
+        .previews {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .preview {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .preview img { width: 100%; height: 100%; object-fit: cover; }
+
+        .preview-x {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 20px;
+            height: 20px;
+            background: var(--magenta);
+            border: none;
+            border-radius: 50%;
+            color: #fff;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 18px;
+            font-size: 16px;
+            font-weight: 700;
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--cyan), var(--purple));
+            color: var(--bg);
+        }
+
+        .btn-primary:disabled { background: var(--border); cursor: not-allowed; }
+
+        .btn-secondary {
+            background: transparent;
+            border: 2px solid var(--border);
+            color: var(--muted);
+            margin-top: 20px;
+        }
+
+        .btn-secondary:hover { border-color: var(--cyan); color: var(--cyan); }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 50px;
+        }
+
+        .loading.active { display: block; }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border);
+            border-top-color: var(--cyan);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .results { display: none; margin-top: 30px; }
+        .results.active { display: block; }
+
+        .section {
+            background: var(--card);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .badge {
+            margin-left: auto;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-high { background: rgba(0,255,136,0.15); color: var(--green); }
+        .badge-med { background: rgba(255,200,0,0.15); color: #ffc800; }
+        .badge-low { background: rgba(255,100,100,0.15); color: #ff6464; }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .field { }
+        .field-full { grid-column: 1 / -1; }
+
+        .label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--cyan);
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+
+        .input {
+            width: 100%;
+            padding: 12px;
+            background: var(--input);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 14px;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .input:focus { outline: none; border-color: var(--cyan); }
+
+        textarea.input { min-height: 80px; resize: vertical; }
+
+        select.input { cursor: pointer; }
+
+        .price-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        .price-field { text-align: center; }
+
+        .price-label {
+            font-size: 11px;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+
+        .price-input {
+            width: 100%;
+            padding: 12px;
+            background: var(--input);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--green);
+            font-size: 20px;
+            font-weight: 700;
+            text-align: center;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .price-input:focus { outline: none; border-color: var(--green); }
+
+        .copy-section {
+            background: linear-gradient(135deg, rgba(0,245,255,0.05), rgba(139,92,246,0.05));
+            border: 1px solid var(--cyan);
+        }
+
+        .copy-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .copy-btn {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, var(--magenta), var(--purple));
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .copy-preview {
+            background: var(--input);
+            border-radius: 10px;
+            padding: 15px;
+            font-size: 13px;
+            line-height: 1.7;
+            color: var(--muted);
+            white-space: pre-wrap;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--green);
+            color: var(--bg);
+            padding: 12px 25px;
+            border-radius: 10px;
+            font-weight: 600;
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 100;
+        }
+
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+        .error {
+            background: rgba(255,100,100,0.1);
+            border: 1px solid rgba(255,100,100,0.3);
+            border-radius: 12px;
+            padding: 15px;
+            color: #ff6464;
+            text-align: center;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .error.active { display: block; }
+
+        @media (max-width: 500px) {
+            .grid { grid-template-columns: 1fr; }
+            .price-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo">🔮 VintedAI</div>
+            <p class="tagline">ANALYSE INTELLIGENTE • PRIX OPTIMISE</p>
+        </header>
+
+        <div class="upload-zone" id="uploadZone">
+            <div class="upload-icon">📸</div>
+            <div class="upload-title">Depose tes photos ici</div>
+            <div class="upload-sub">Jusqu'a 5 images • JPG, PNG</div>
+            <div class="previews" id="previews"></div>
+            <input type="file" id="fileInput" multiple accept="image/*" hidden>
+        </div>
+
+        <button class="btn btn-primary" id="analyzeBtn" disabled>⚡ ANALYSER</button>
+
+        <div class="error" id="error"></div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Analyse en cours...</p>
+        </div>
+
+        <div class="results" id="results">
+            <div class="section">
+                <div class="section-title">
+                    ✏️ Informations
+                    <span class="badge" id="badge">--%</span>
+                </div>
+                <div class="grid">
+                    <div class="field field-full">
+                        <div class="label">Titre</div>
+                        <input type="text" class="input" id="titre" maxlength="80">
+                    </div>
+                    <div class="field field-full">
+                        <div class="label">Description</div>
+                        <textarea class="input" id="description"></textarea>
+                    </div>
+                    <div class="field">
+                        <div class="label">Marque</div>
+                        <input type="text" class="input" id="marque">
+                    </div>
+                    <div class="field">
+                        <div class="label">Type</div>
+                        <input type="text" class="input" id="type">
+                    </div>
+                    <div class="field">
+                        <div class="label">Categorie</div>
+                        <input type="text" class="input" id="categorie">
+                    </div>
+                    <div class="field">
+                        <div class="label">Etat</div>
+                        <select class="input" id="etat">
+                            <option>Neuf avec etiquette</option>
+                            <option>Neuf sans etiquette</option>
+                            <option>Tres bon etat</option>
+                            <option selected>Bon etat</option>
+                            <option>Satisfaisant</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <div class="label">Taille</div>
+                        <input type="text" class="input" id="taille">
+                    </div>
+                    <div class="field">
+                        <div class="label">Couleur</div>
+                        <input type="text" class="input" id="couleur">
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">💰 Prix</div>
+                <div class="price-grid">
+                    <div class="price-field">
+                        <div class="price-label">MINIMUM</div>
+                        <input type="number" class="price-input" id="prixMin" min="1">
+                    </div>
+                    <div class="price-field">
+                        <div class="price-label">SUGGERE</div>
+                        <input type="number" class="price-input" id="prixSuggere" min="1">
+                    </div>
+                    <div class="price-field">
+                        <div class="price-label">MAXIMUM</div>
+                        <input type="number" class="price-input" id="prixMax" min="1">
+                    </div>
+                </div>
+            </div>
+
+            <div class="section copy-section">
+                <div class="copy-header">
+                    <div class="section-title" style="margin:0">📋 Apercu</div>
+                    <button class="copy-btn" id="copyBtn">Copier</button>
+                </div>
+                <div class="copy-preview" id="preview"></div>
+            </div>
+
+            <button class="btn btn-secondary" id="newBtn">🔄 Nouvelle analyse</button>
+        </div>
+    </div>
+
+    <div class="toast" id="toast">Copie!</div>
+
+    <script>
+        const $ = id => document.getElementById(id);
+        let files = [];
+
+        // Upload
+        $('uploadZone').onclick = e => { if (!e.target.classList.contains('preview-x')) $('fileInput').click(); };
+        $('uploadZone').ondragover = e => e.preventDefault();
+        $('uploadZone').ondrop = e => { e.preventDefault(); addFiles(e.dataTransfer.files); };
+        $('fileInput').onchange = e => addFiles(e.target.files);
+
+        function addFiles(newFiles) {
+            const imgs = [...newFiles].filter(f => f.type.startsWith('image/'));
+            if (files.length + imgs.length > 5) { toast('Max 5 images'); return; }
+            files = [...files, ...imgs].slice(0, 5);
+            renderPreviews();
+            $('analyzeBtn').disabled = !files.length;
+        }
+
+        function renderPreviews() {
+            $('previews').innerHTML = '';
+            files.forEach((f, i) => {
+                const r = new FileReader();
+                r.onload = e => {
+                    const d = document.createElement('div');
+                    d.className = 'preview';
+                    d.innerHTML = `<img src="${e.target.result}"><button class="preview-x" data-i="${i}">×</button>`;
+                    $('previews').appendChild(d);
+                    d.querySelector('.preview-x').onclick = ev => {
+                        ev.stopPropagation();
+                        files.splice(i, 1);
+                        renderPreviews();
+                        $('analyzeBtn').disabled = !files.length;
+                    };
+                };
+                r.readAsDataURL(f);
+            });
+        }
+
+        // Analyze
+        $('analyzeBtn').onclick = async () => {
+            if (!files.length) return;
+            $('uploadZone').style.display = 'none';
+            $('analyzeBtn').style.display = 'none';
+            $('results').classList.remove('active');
+            $('error').classList.remove('active');
+            $('loading').classList.add('active');
+
+            try {
+                const images = await Promise.all(files.map(f => new Promise(res => {
+                    const r = new FileReader();
+                    r.onload = e => res(e.target.result);
+                    r.readAsDataURL(f);
+                })));
+
+                const resp = await fetch('/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ images })
+                });
+
+                const data = await resp.json();
+                if (data.error) throw new Error(data.error);
+                showResults(data);
+            } catch (err) {
+                $('loading').classList.remove('active');
+                $('error').textContent = '❌ ' + err.message;
+                $('error').classList.add('active');
+                $('uploadZone').style.display = 'block';
+                $('analyzeBtn').style.display = 'block';
+            }
+        };
+
+        function showResults(d) {
+            $('loading').classList.remove('active');
+            $('results').classList.add('active');
+
+            const conf = d.confiance || 70;
+            $('badge').textContent = conf + '%';
+            $('badge').className = 'badge ' + (conf >= 80 ? 'badge-high' : conf >= 60 ? 'badge-med' : 'badge-low');
+
+            $('titre').value = d.titre || '';
+            $('description').value = d.description || '';
+            $('marque').value = d.marque || '';
+            $('type').value = d.type_produit || '';
+            $('categorie').value = d.categorie_vinted || '';
+            $('etat').value = d.etat || 'Bon etat';
+            $('taille').value = d.taille || '';
+            $('couleur').value = Array.isArray(d.couleurs) ? d.couleurs.join(', ') : (d.couleurs || '');
+            $('prixMin').value = d.prix_min || 10;
+            $('prixSuggere').value = d.prix_suggere || 20;
+            $('prixMax').value = d.prix_max || 30;
+
+            updatePreview();
+        }
+
+        // Update preview on input change
+        document.querySelectorAll('.input, .price-input').forEach(el => el.oninput = updatePreview);
+
+        function updatePreview() {
+            const t = $('titre').value;
+            const desc = $('description').value;
+            const m = $('marque').value;
+            const e = $('etat').value;
+            const ta = $('taille').value;
+            const c = $('couleur').value;
+            const p = $('prixSuggere').value;
+
+            let txt = t + '\n\n' + desc + '\n';
+            if (m) txt += '\n• Marque: ' + m;
+            if (e) txt += '\n• Etat: ' + e;
+            if (ta && ta !== 'Non visible') txt += '\n• Taille: ' + ta;
+            if (c && c !== 'Non identifiee') txt += '\n• Couleur: ' + c;
+            txt += '\n\n💰 ' + p + '€';
+
+            $('preview').textContent = txt;
+        }
+
+        // Copy
+        $('copyBtn').onclick = () => {
+            navigator.clipboard.writeText($('preview').textContent);
+            toast('Copie!');
+        };
+
+        // New
+        $('newBtn').onclick = () => {
+            files = [];
+            $('previews').innerHTML = '';
+            $('fileInput').value = '';
+            $('analyzeBtn').disabled = true;
+            $('loading').classList.remove('active');
+            $('results').classList.remove('active');
+            $('error').classList.remove('active');
+            $('uploadZone').style.display = 'block';
+            $('analyzeBtn').style.display = 'block';
+        };
+
+        function toast(msg) {
+            $('toast').textContent = msg;
+            $('toast').classList.add('show');
+            setTimeout(() => $('toast').classList.remove('show'), 2000);
+        }
+    </script>
+</body>
+</html>
 
