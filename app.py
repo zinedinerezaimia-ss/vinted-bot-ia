@@ -1,3 +1,6 @@
+
+Copier
+
 from flask import Flask, render_template, request, jsonify
 import base64
 import os
@@ -124,7 +127,8 @@ RÉPONDS UNIQUEMENT EN JSON VALIDE (sans markdown, sans ```json```, juste le JSO
     }
     
     try:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+        # Utiliser gemini-1.5-flash-latest ou gemini-pro-vision
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_API_KEY}"
         
         response = requests.post(
             url,
