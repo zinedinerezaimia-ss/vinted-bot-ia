@@ -1,1 +1,457 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VintedAI - Generateur d'annonces</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Outfit', sans-serif; background: #0a0a0f; color: #fff; min-height: 100vh; padding: 15px; }
+        .container { max-width: 600px; margin: 0 auto; }
+        
+        .header { text-align: center; margin-bottom: 25px; padding-top: 10px; }
+        .logo { font-size: 28px; font-weight: 700; background: linear-gradient(135deg, #00f5ff, #ff00aa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .tagline { font-size: 12px; color: #666; margin-top: 5px; }
+        
+        .card { background: #1a1a25; border-radius: 14px; padding: 20px; margin-bottom: 15px; }
+        .card-title { font-size: 14px; font-weight: 600; color: #00f5ff; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
+        
+        .form-group { margin-bottom: 15px; }
+        .form-label { font-size: 11px; text-transform: uppercase; color: #666; margin-bottom: 6px; display: block; letter-spacing: 0.5px; }
+        .form-select, .form-input { width: 100%; padding: 12px; background: #12121a; border: 1px solid #2a2a3a; border-radius: 8px; color: #fff; font-size: 14px; font-family: inherit; }
+        .form-select:focus, .form-input:focus { outline: none; border-color: #00f5ff; }
+        .form-select { cursor: pointer; }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        
+        .category-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px; }
+        .category-btn { padding: 12px 8px; background: #12121a; border: 1px solid #2a2a3a; border-radius: 8px; color: #888; font-size: 12px; cursor: pointer; text-align: center; transition: all 0.2s; font-family: inherit; }
+        .category-btn:hover { border-color: #00f5ff; color: #00f5ff; }
+        .category-btn.active { background: #00f5ff; color: #000; border-color: #00f5ff; }
+        .category-btn span { display: block; font-size: 18px; margin-bottom: 4px; }
+        
+        .product-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+        .product-btn { padding: 10px; background: #12121a; border: 1px solid #2a2a3a; border-radius: 8px; color: #aaa; font-size: 12px; cursor: pointer; text-align: left; transition: all 0.2s; font-family: inherit; }
+        .product-btn:hover { border-color: #ff00aa; color: #ff00aa; }
+        .product-btn.active { background: #ff00aa; color: #fff; border-color: #ff00aa; }
+        
+        .options { display: none; }
+        .options.show { display: block; }
+        
+        .btn { width: 100%; padding: 16px; font-size: 15px; font-weight: 600; border: none; border-radius: 12px; cursor: pointer; font-family: inherit; margin-top: 10px; }
+        .btn-generate { background: linear-gradient(135deg, #00f5ff, #8b5cf6); color: #000; }
+        .btn-generate:disabled { background: #333; color: #666; cursor: not-allowed; }
+        .btn-reset { background: transparent; border: 1px solid #333; color: #888; margin-top: 10px; }
+        .btn-reset:hover { border-color: #00f5ff; color: #00f5ff; }
+        
+        /* RESULTATS */
+        .results { display: none; }
+        .results.show { display: block; }
+        
+        .result-field { margin-bottom: 12px; }
+        .result-row { display: flex; gap: 10px; align-items: flex-start; }
+        .result-input { flex: 1; padding: 12px; background: #12121a; border: 1px solid #2a2a3a; border-radius: 8px; color: #fff; font-size: 14px; font-family: inherit; }
+        .result-input:focus { outline: none; border-color: #00f5ff; }
+        textarea.result-input { min-height: 70px; resize: vertical; }
+        
+        .copy-btn { padding: 12px 16px; background: #00f5ff; color: #000; border: none; border-radius: 8px; font-size: 11px; font-weight: 600; cursor: pointer; font-family: inherit; white-space: nowrap; }
+        .copy-btn:hover { background: #00d4dd; }
+        .copy-btn.copied { background: #00ff64; }
+        
+        .price-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; text-align: center; }
+        .price-item .form-label { margin-bottom: 8px; }
+        .price-input { width: 100%; padding: 12px; background: #12121a; border: 1px solid #2a2a3a; border-radius: 8px; color: #00ff64; font-size: 20px; font-weight: 700; text-align: center; font-family: inherit; }
+        .price-input:focus { outline: none; border-color: #00ff64; }
+        
+        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: #00ff64; color: #000; padding: 12px 25px; border-radius: 10px; font-weight: 600; opacity: 0; transition: all 0.3s; z-index: 100; }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        
+        .hidden { display: none !important; }
+        
+        @media (max-width: 400px) {
+            .category-grid { grid-template-columns: repeat(2, 1fr); }
+            .grid-2, .price-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🔮 VintedAI</div>
+            <div class="tagline">GENERATEUR D'ANNONCES OPTIMISEES</div>
+        </div>
 
+        <!-- ETAPE 1: Categorie -->
+        <div class="card" id="step1">
+            <div class="card-title">1️⃣ Choisis une categorie</div>
+            <div class="category-grid">
+                <button class="category-btn" data-cat="maillots"><span>⚽</span>Maillots</button>
+                <button class="category-btn" data-cat="sacs"><span>👜</span>Sacs</button>
+                <button class="category-btn" data-cat="hauts"><span>👕</span>Hauts</button>
+                <button class="category-btn" data-cat="vestes"><span>🧥</span>Vestes</button>
+                <button class="category-btn" data-cat="pantalons"><span>👖</span>Pantalons</button>
+                <button class="category-btn" data-cat="chaussures"><span>👟</span>Chaussures</button>
+                <button class="category-btn" data-cat="robes"><span>👗</span>Robes</button>
+                <button class="category-btn" data-cat="accessoires"><span>🎒</span>Accessoires</button>
+            </div>
+        </div>
+
+        <!-- ETAPE 2: Produit -->
+        <div class="card hidden" id="step2">
+            <div class="card-title">2️⃣ Type de produit</div>
+            <div class="product-grid" id="productGrid"></div>
+        </div>
+
+        <!-- ETAPE 3: Options -->
+        <div class="card hidden" id="step3">
+            <div class="card-title">3️⃣ Details</div>
+            <div id="optionsContainer"></div>
+            <button class="btn btn-generate" id="generateBtn">✨ GENERER L'ANNONCE</button>
+        </div>
+
+        <!-- RESULTATS -->
+        <div class="results" id="results">
+            <div class="card">
+                <div class="card-title">📝 TITRE</div>
+                <div class="result-field">
+                    <div class="result-row">
+                        <input type="text" class="result-input" id="resTitre">
+                        <button class="copy-btn" onclick="copyField('resTitre')">Copier</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">📄 DESCRIPTION</div>
+                <div class="result-field">
+                    <div class="result-row">
+                        <textarea class="result-input" id="resDescription"></textarea>
+                        <button class="copy-btn" onclick="copyField('resDescription')">Copier</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">🏷️ INFORMATIONS</div>
+                <div class="grid-2">
+                    <div class="result-field">
+                        <div class="form-label">Marque</div>
+                        <div class="result-row">
+                            <input type="text" class="result-input" id="resMarque">
+                            <button class="copy-btn" onclick="copyField('resMarque')">Copier</button>
+                        </div>
+                    </div>
+                    <div class="result-field">
+                        <div class="form-label">Categorie</div>
+                        <div class="result-row">
+                            <input type="text" class="result-input" id="resCategorie">
+                            <button class="copy-btn" onclick="copyField('resCategorie')">Copier</button>
+                        </div>
+                    </div>
+                    <div class="result-field">
+                        <div class="form-label">Etat</div>
+                        <div class="result-row">
+                            <input type="text" class="result-input" id="resEtat">
+                            <button class="copy-btn" onclick="copyField('resEtat')">Copier</button>
+                        </div>
+                    </div>
+                    <div class="result-field">
+                        <div class="form-label">Taille</div>
+                        <div class="result-row">
+                            <input type="text" class="result-input" id="resTaille">
+                            <button class="copy-btn" onclick="copyField('resTaille')">Copier</button>
+                        </div>
+                    </div>
+                    <div class="result-field">
+                        <div class="form-label">Couleur</div>
+                        <div class="result-row">
+                            <input type="text" class="result-input" id="resCouleur">
+                            <button class="copy-btn" onclick="copyField('resCouleur')">Copier</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="background: linear-gradient(135deg, rgba(0,245,255,0.1), rgba(139,92,246,0.1)); border: 1px solid #00f5ff;">
+                <div class="card-title">💰 PRIX SUGGERE</div>
+                <div class="price-row">
+                    <div class="price-item">
+                        <div class="form-label">Min</div>
+                        <input type="number" class="price-input" id="resPrixMin">
+                    </div>
+                    <div class="price-item">
+                        <div class="form-label">Suggere</div>
+                        <input type="number" class="price-input" id="resPrix">
+                    </div>
+                    <div class="price-item">
+                        <div class="form-label">Max</div>
+                        <input type="number" class="price-input" id="resPrixMax">
+                    </div>
+                </div>
+                <button class="copy-btn" style="width: 100%; margin-top: 15px; padding: 14px;" onclick="copyField('resPrix')">Copier le prix</button>
+            </div>
+
+            <button class="btn btn-reset" onclick="resetAll()">🔄 Nouvelle annonce</button>
+        </div>
+    </div>
+
+    <div class="toast" id="toast">Copie!</div>
+
+    <script>
+        const $ = id => document.getElementById(id);
+        
+        // Produits par categorie
+        const PRODUCTS = {
+            maillots: [
+                {key: 'maillot_bayern', label: 'Bayern Munich'},
+                {key: 'maillot_psg', label: 'PSG'},
+                {key: 'maillot_real', label: 'Real Madrid'},
+                {key: 'maillot_barca', label: 'FC Barcelona'},
+                {key: 'maillot_om', label: 'OM Marseille'},
+                {key: 'maillot_autre', label: 'Autre club'}
+            ],
+            sacs: [
+                {key: 'sac_luxe', label: 'Sac luxe'},
+                {key: 'sac_moyen', label: 'Sac a main'},
+                {key: 'sac_bandouliere', label: 'Bandouliere'}
+            ],
+            hauts: [
+                {key: 'tshirt_marque', label: 'T-shirt marque'},
+                {key: 'tshirt_basic', label: 'T-shirt basique'},
+                {key: 'pull_sweat', label: 'Pull / Sweat'},
+                {key: 'hoodie', label: 'Hoodie'}
+            ],
+            vestes: [
+                {key: 'veste_cuir', label: 'Veste cuir'},
+                {key: 'veste_jean', label: 'Veste jean'},
+                {key: 'manteau', label: 'Manteau'},
+                {key: 'doudoune', label: 'Doudoune'}
+            ],
+            pantalons: [
+                {key: 'jean', label: 'Jean'},
+                {key: 'pantalon', label: 'Pantalon'},
+                {key: 'short', label: 'Short'}
+            ],
+            chaussures: [
+                {key: 'sneakers_marque', label: 'Sneakers marque'},
+                {key: 'sneakers_basic', label: 'Baskets'},
+                {key: 'bottes', label: 'Bottes'},
+                {key: 'talons', label: 'Escarpins'}
+            ],
+            robes: [
+                {key: 'robe_soiree', label: 'Robe soiree'},
+                {key: 'robe_ete', label: 'Robe ete'}
+            ],
+            accessoires: [
+                {key: 'casquette', label: 'Casquette'},
+                {key: 'bonnet', label: 'Bonnet'},
+                {key: 'ceinture', label: 'Ceinture'},
+                {key: 'echarpe', label: 'Echarpe'},
+                {key: 'lunettes', label: 'Lunettes'},
+                {key: 'montre', label: 'Montre'}
+            ]
+        };
+
+        const COULEURS = ['Noir', 'Blanc', 'Bleu', 'Rouge', 'Vert', 'Jaune', 'Rose', 'Gris', 'Marron', 'Beige', 'Orange', 'Violet', 'Bleu marine', 'Bordeaux', 'Kaki', 'Multicolore'];
+        const TAILLES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+        const POINTURES = ['36', '37', '38', '39', '40', '41', '42', '43', '44', '45', '46'];
+        const COUPES = ['Slim', 'Skinny', 'Regular', 'Droit', 'Mom', 'Bootcut'];
+        const SAISONS = ['2024/2025', '2023/2024', '2022/2023', '2021/2022'];
+        const JOUEURS = [
+            {key: 'sans', label: 'Sans flocage'},
+            {key: 'lewandowski', label: 'Lewandowski #9'},
+            {key: 'mbappe', label: 'Mbappe #7'},
+            {key: 'messi', label: 'Messi #10'},
+            {key: 'ronaldo', label: 'Ronaldo #7'},
+            {key: 'neymar', label: 'Neymar #10'},
+            {key: 'haaland', label: 'Haaland #9'},
+            {key: 'benzema', label: 'Benzema #9'},
+            {key: 'bellingham', label: 'Bellingham #5'},
+            {key: 'vinicius', label: 'Vinicius Jr #7'},
+            {key: 'autre', label: 'Autre joueur'}
+        ];
+        const ETATS = ['Neuf avec etiquette', 'Neuf sans etiquette', 'Tres bon etat', 'Bon etat', 'Satisfaisant'];
+
+        let selectedCategory = null;
+        let selectedProduct = null;
+
+        // Categorie click
+        document.querySelectorAll('.category-btn').forEach(btn => {
+            btn.onclick = () => {
+                document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                selectedCategory = btn.dataset.cat;
+                showProducts(selectedCategory);
+            };
+        });
+
+        function showProducts(cat) {
+            const grid = $('productGrid');
+            grid.innerHTML = '';
+            PRODUCTS[cat].forEach(p => {
+                const btn = document.createElement('button');
+                btn.className = 'product-btn';
+                btn.textContent = p.label;
+                btn.onclick = () => selectProduct(p.key, btn);
+                grid.appendChild(btn);
+            });
+            $('step2').classList.remove('hidden');
+            $('step3').classList.add('hidden');
+            $('results').classList.remove('show');
+        }
+
+        function selectProduct(key, btn) {
+            document.querySelectorAll('.product-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            selectedProduct = key;
+            showOptions(key);
+        }
+
+        function showOptions(key) {
+            const container = $('optionsContainer');
+            container.innerHTML = '';
+            
+            // Options communes
+            let html = '<div class="grid-2">';
+            
+            // Couleur
+            html += `<div class="form-group">
+                <label class="form-label">Couleur</label>
+                <select class="form-select" id="optCouleur">
+                    ${COULEURS.map(c => `<option>${c}</option>`).join('')}
+                </select>
+            </div>`;
+            
+            // Taille ou Pointure
+            if (key.includes('chaussures') || key.includes('sneakers') || key.includes('bottes') || key.includes('talons')) {
+                html += `<div class="form-group">
+                    <label class="form-label">Pointure</label>
+                    <select class="form-select" id="optTaille">
+                        ${POINTURES.map(p => `<option>${p}</option>`).join('')}
+                    </select>
+                </div>`;
+            } else if (!key.includes('sac') && !key.includes('accessoire') && !key.includes('casquette') && !key.includes('bonnet') && !key.includes('ceinture') && !key.includes('echarpe') && !key.includes('lunettes') && !key.includes('montre')) {
+                html += `<div class="form-group">
+                    <label class="form-label">Taille</label>
+                    <select class="form-select" id="optTaille">
+                        ${TAILLES.map(t => `<option>${t}</option>`).join('')}
+                    </select>
+                </div>`;
+            }
+            
+            html += '</div>';
+            
+            // Options specifiques maillots
+            if (key.includes('maillot')) {
+                html += '<div class="grid-2">';
+                html += `<div class="form-group">
+                    <label class="form-label">Saison</label>
+                    <select class="form-select" id="optSaison">
+                        ${SAISONS.map(s => `<option>${s}</option>`).join('')}
+                    </select>
+                </div>`;
+                html += `<div class="form-group">
+                    <label class="form-label">Joueur</label>
+                    <select class="form-select" id="optJoueur">
+                        ${JOUEURS.map(j => `<option value="${j.key}">${j.label}</option>`).join('')}
+                    </select>
+                </div>`;
+                html += '</div>';
+            }
+            
+            // Coupe jean
+            if (key === 'jean') {
+                html += `<div class="form-group">
+                    <label class="form-label">Coupe</label>
+                    <select class="form-select" id="optCoupe">
+                        ${COUPES.map(c => `<option>${c}</option>`).join('')}
+                    </select>
+                </div>`;
+            }
+            
+            // Marque personnalisee
+            if (!key.includes('maillot_bayern') && !key.includes('maillot_psg') && !key.includes('maillot_real') && !key.includes('maillot_barca') && !key.includes('maillot_om')) {
+                html += `<div class="form-group">
+                    <label class="form-label">Marque (optionnel)</label>
+                    <input type="text" class="form-input" id="optMarque" placeholder="Nike, Zara, etc.">
+                </div>`;
+            }
+            
+            // Etat
+            html += `<div class="form-group">
+                <label class="form-label">Etat</label>
+                <select class="form-select" id="optEtat">
+                    ${ETATS.map((e, i) => `<option ${i === 2 ? 'selected' : ''}>${e}</option>`).join('')}
+                </select>
+            </div>`;
+            
+            container.innerHTML = html;
+            $('step3').classList.remove('hidden');
+        }
+
+        // Generate
+        $('generateBtn').onclick = async () => {
+            if (!selectedProduct) return;
+            
+            const options = {
+                couleur: $('optCouleur')?.value || 'Noir',
+                taille: $('optTaille')?.value || 'M',
+                marque: $('optMarque')?.value || '',
+                saison: $('optSaison')?.value || '',
+                joueur: $('optJoueur')?.value || '',
+                coupe: $('optCoupe')?.value || 'Slim',
+                etat: $('optEtat')?.value || 'Tres bon etat'
+            };
+            
+            try {
+                const resp = await fetch('/generate', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({product: selectedProduct, options})
+                });
+                const data = await resp.json();
+                if (data.error) throw new Error(data.error);
+                
+                $('resTitre').value = data.titre;
+                $('resDescription').value = data.description;
+                $('resMarque').value = data.marque;
+                $('resCategorie').value = data.categorie;
+                $('resEtat').value = data.etat;
+                $('resTaille').value = data.taille;
+                $('resCouleur').value = data.couleur;
+                $('resPrixMin').value = data.prix_min;
+                $('resPrix').value = data.prix;
+                $('resPrixMax').value = data.prix_max;
+                
+                $('results').classList.add('show');
+                $('results').scrollIntoView({behavior: 'smooth'});
+            } catch(err) {
+                alert('Erreur: ' + err.message);
+            }
+        };
+
+        function copyField(id) {
+            const el = $(id);
+            navigator.clipboard.writeText(el.value);
+            toast('Copie!');
+        }
+
+        function resetAll() {
+            selectedCategory = null;
+            selectedProduct = null;
+            document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+            $('step2').classList.add('hidden');
+            $('step3').classList.add('hidden');
+            $('results').classList.remove('show');
+            window.scrollTo({top: 0, behavior: 'smooth'});
+        }
+
+        function toast(msg) {
+            $('toast').textContent = msg;
+            $('toast').classList.add('show');
+            setTimeout(() => $('toast').classList.remove('show'), 1500);
+        }
+    </script>
+</body>
+</html>
